@@ -1,10 +1,44 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "Maxim";
 }
 
 <h2>@ViewData["Title"]</h2>
-<h3>@ViewData["Message"]</h3>
+<h3>@ViewData["Message"]<span id="result2"></span></h3>
+
+<script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#videoEnd').click(function () {
+            $.ajax({
+                type: 'GET',
+                url: '/home/nextDestiny',
+                success: function (result) {
+                    $('#result2').html(result);
+                }
+            });
+        });
+        $('#addDestiny').click(function () {
+            var destinyText = $('#newDestinyField').val();
+            $.ajax({
+                type: 'GET',
+                url: '/home/addDestiny/' + destinyText,
+                success: function () {
+                    $('#newDestinyField').html("");
+                }
+            });
+        });
+    });
+</script>
+
+<button id="videoEnd">
+    Press me to refresh the destiny
+</button>
+
+<button id="addDestiny">
+    Press me to add a destiny
+</button>
+<input type="text" id="newDestinyField">
+
 <table class="table">
     <thead>
         <tr>
