@@ -18,7 +18,7 @@ namespace ASPNET_mvc_core.Models
                 }
                 if (_destinies.Count == 0)
                     return "кирдым";
-                return _destinies[RandomUtils.Range(0, _destinies.Count)];
+                return "/playlist/" + _destinies[RandomUtils.Range(0, _destinies.Count)];
             }
             set
             {

@@ -45,7 +45,7 @@ namespace ASPNET_mvc_core.Controllers
             ViewData["Message"] = $"Сим-сим-сим, идёт по улице Максим. На кого пальцем покажет - тому... ";
             return View();
         }
-        
+
         [Route("nextDestiny")]
         public IActionResult NextDestiny()
         {
@@ -58,6 +58,18 @@ namespace ASPNET_mvc_core.Controllers
         {
             MaximModel.Destiny = destiny;
             return null;
+        }
+        [Route("nextTrack")]
+        public IActionResult NextTrack()
+        {
+            Thread.Sleep(PlayerModel.getDelayMS() + 500);
+            return new JsonResult(PlayerModel.NextSource.Item1);
+        }
+
+        [Route("startOver")]
+        public IActionResult StartOver()
+        {
+            return new JsonResult(PlayerModel.current.Item1);
         }
     }
 }
