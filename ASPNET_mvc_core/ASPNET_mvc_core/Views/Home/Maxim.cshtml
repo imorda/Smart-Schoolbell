@@ -30,6 +30,32 @@
         });
     });
 </script>
+<script type="text/javascript">
+    function SendStartOver() {
+        $.ajax({
+            type: 'GET',
+            url: '/home/startOver',
+            success: function (result) {
+                SetSource(result);
+                SendNextTrack();
+            }
+        });
+    }
+    function SendNextTrack() {
+        $.ajax({
+            type: 'GET',
+            url: '/home/nextTrack',
+            success: function (result) {
+                SetSource(result);
+                SendNextTrack();
+            }
+        });
+    }
+    function SetSource(src) {
+        $('#player').attr('src', src);
+    }
+    $(document).ready(function () { SendStartOver(); });
+</script>
 
 <button id="videoEnd">
     Press me to refresh the destiny
