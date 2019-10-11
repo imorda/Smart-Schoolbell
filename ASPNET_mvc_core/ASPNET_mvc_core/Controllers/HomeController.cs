@@ -57,19 +57,20 @@ namespace ASPNET_mvc_core.Controllers
         public IActionResult AddDestiny(string destiny)
         {
             MaximModel.Destiny = destiny;
+            PlayerModel.Announcement.Add((DateTime.Now.TimeOfDay + TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(Convert.ToDouble(destiny))));
             return null;
         }
         [Route("nextTrack")]
         public IActionResult NextTrack()
         {
-            Thread.Sleep(PlayerModel.getDelayMS() + 500);
+            Thread.Sleep(PlayerModel.getDelayMS());
             return new JsonResult(PlayerModel.NextSource.Item1);
         }
 
         [Route("startOver")]
         public IActionResult StartOver()
         {
-            return new JsonResult(PlayerModel.current.Item1);
+            return new JsonResult(PlayerModel.GetCurrent().Item1);
         }
     }
 }

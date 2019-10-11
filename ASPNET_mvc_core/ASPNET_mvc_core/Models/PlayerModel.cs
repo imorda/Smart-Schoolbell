@@ -7,31 +7,49 @@ namespace ASPNET_mvc_core.Models
 {
     public class PlayerModel
     {
-        private static List<(TimeSpan, TimeSpan)> LessonStart;
-        private static List<(TimeSpan, TimeSpan)> LessonEnd;
-        private static List<(TimeSpan, TimeSpan)> Announcement;
-        private static List<(string, TimeSpan)> Playlist;
+        public static List<(TimeSpan, TimeSpan)> LessonStart = new List<(TimeSpan, TimeSpan)>();
+        public static List<(TimeSpan, TimeSpan)> LessonEnd = new List<(TimeSpan, TimeSpan)>();
+        public static List<(TimeSpan, TimeSpan)> Announcement = new List<(TimeSpan, TimeSpan)>();
+        public static List<(string, TimeSpan)> Playlist = new List<(string, TimeSpan)>();
 
-
+        private static bool nil = true;
+        private static bool noEvents = false;
+        private static (string, TimeSpan) curr;
 
         private static TimeSpan TrackEndPoint = new TimeSpan();
 
-        public static (string, TimeSpan) current
+
+        static PlayerModel()
         {
-            set
-            {
-                current = value;
-            }
-            get
-            {
-                if (current.Item1 != null)
-                    return current;
+            /*
+            LessonEnd.Add((TimeSpan.FromSeconds(22 * 60 * 60 + 26* 60 + 0), TimeSpan.FromSeconds(4)));
+            LessonStart.Add((TimeSpan.FromSeconds(22 * 60 * 60 + 26 * 60 + 15), TimeSpan.FromSeconds(4)));
+            LessonEnd.Add((TimeSpan.FromSeconds(22*60*60+ 26 * 60+30), TimeSpan.FromSeconds(4)));
+            Announcement.Add((TimeSpan.FromSeconds(22 * 60*60 + 26 * 60 + 45), TimeSpan.FromSeconds(4)));
+            Announcement.Add((TimeSpan.FromSeconds(22 * 60*60 + 26 * 60 + 55), TimeSpan.FromSeconds(4)));
+            Playlist.Add(("15.mp4", TimeSpan.FromMinutes(1)));
+            Playlist.Add(("16.mp3", TimeSpan.FromMinutes(1)));
+            Playlist.Add(("17.mp4", TimeSpan.FromMinutes(1))); ТЕСТОВОЕ РАСПИСАНИЕ
+    */     
+    }
+
+        public static void SetCurrent((string, TimeSpan) value)
+        {
+            nil = false;
+            curr = value;
+        }
+
+        public static (string, TimeSpan) GetCurrent()
+        {
+        
+                if (!nil)
+                    return (curr);
                 else
                 {
                     (string, TimeSpan) x = NextSource;
                     return (x.Item1, x.Item2);
                 }
-            }
+            
         }
 
         private static string NextEvent
@@ -39,10 +57,14 @@ namespace ASPNET_mvc_core.Models
             get
             {
                 List<(TimeSpan, TimeSpan)> ClosestEventsList = new List<(TimeSpan, TimeSpan)>();
-                ClosestEventsList.Append(GetClosestEvent(Announcement));
-                ClosestEventsList.Append(GetClosestEvent(LessonStart));
-                ClosestEventsList.Append(GetClosestEvent(LessonEnd));
-
+                ClosestEventsList.Add(GetClosestEvent(Announcement, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)));
+                ClosestEventsList.Add(GetClosestEvent(LessonStart, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)));
+                ClosestEventsList.Add(GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)));
+                GetMinSpan(ClosestEventsList);
+                if (noEvents)
+                    return "none";
+                if (GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay).Item1 < GetClosestEvent(LessonStart, DateTime.Now.TimeOfDay).Item1)
+                    return "lesEnd2"; //если программа включена во время урока
                 if ((GetMinSpan(ClosestEventsList).Item1 - DateTime.Now.TimeOfDay > TrackEndPoint - DateTime.Now.TimeOfDay) || TrackEndPoint == new TimeSpan())
                     return "track";
                 else
@@ -63,28 +85,39 @@ namespace ASPNET_mvc_core.Models
             {
                 if (i.Item1 != new TimeSpan())
                 {
-                    result.Append(i.Item1);
+                    result.Add(i.Item1);
                 }
-                result2.Append(i.Item1);
+                result2.Add(i.Item1);
             }
-            return inputValue[result2.IndexOf(result.Min())];
-        }
-        private static (TimeSpan, TimeSpan) GetClosestEvent(List<(TimeSpan, TimeSpan)> inputList)
+            try
+            {
+                noEvents = false;
+                return inputValue[result2.IndexOf(result.Min())];
+            }
+            catch
+            {
+                noEvents = true;
+                return (new TimeSpan(), new TimeSpan());
+            }
+            }
+        private static (TimeSpan, TimeSpan) GetClosestEvent(List<(TimeSpan, TimeSpan)> inputList, TimeSpan time)
         {
             foreach ((TimeSpan, TimeSpan) i in inputList)
-                if (i.Item1 > DateTime.Now.TimeOfDay)
+                if (i.Item1 > time)
                     return i;
             return (new TimeSpan(), new TimeSpan());
         }
         public static int getDelayMS()
         {
             List<(TimeSpan, TimeSpan)> ClosestEventsList = new List<(TimeSpan, TimeSpan)>();
-            ClosestEventsList.Append(GetClosestEvent(Announcement));
-            ClosestEventsList.Append(GetClosestEvent(LessonStart));
-            ClosestEventsList.Append(GetClosestEvent(LessonEnd));
-
-            if (GetMinSpan(ClosestEventsList).Item1 - DateTime.Now.TimeOfDay > TrackEndPoint - DateTime.Now.TimeOfDay)
+            ClosestEventsList.Add(GetClosestEvent(Announcement, DateTime.Now.TimeOfDay));
+            ClosestEventsList.Add(GetClosestEvent(LessonStart, DateTime.Now.TimeOfDay));
+            ClosestEventsList.Add(GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay));
+            GetMinSpan(ClosestEventsList);
+            if ((GetMinSpan(ClosestEventsList).Item1 - DateTime.Now.TimeOfDay > TrackEndPoint - DateTime.Now.TimeOfDay) || noEvents)
+            {
                 return (int)((TrackEndPoint - DateTime.Now.TimeOfDay).TotalMilliseconds);
+            }
             else
             {
                 return (int)((GetMinSpan(ClosestEventsList).Item1 - DateTime.Now.TimeOfDay).TotalMilliseconds);
@@ -95,29 +128,32 @@ namespace ASPNET_mvc_core.Models
             switch (cause)
             {
                 case ("track"):
-                    TrackEndPoint = DateTime.Now.TimeOfDay + current.Item2;
+                    TrackEndPoint = DateTime.Now.TimeOfDay +  GetCurrent().Item2;
                     break;
                 case ("announcement"):
-                    TrackEndPoint = DateTime.Now.TimeOfDay + Announcement[Announcement.IndexOf(GetClosestEvent(Announcement))].Item2;
+                    TrackEndPoint = DateTime.Now.TimeOfDay + Announcement[Announcement.IndexOf(GetClosestEvent(Announcement, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)))].Item2;
                     break;
                 case ("lesStart"):
-                    TrackEndPoint = GetClosestEvent(LessonEnd).Item1 + TimeSpan.FromMilliseconds(500);
+                    TrackEndPoint = GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay + TimeSpan.FromMilliseconds(500)).Item1 + TimeSpan.FromMilliseconds(500);
                     break;
                 case ("lesEnd"):
-                    TrackEndPoint = DateTime.Now.TimeOfDay + LessonEnd[LessonEnd.IndexOf(GetClosestEvent(LessonEnd))].Item2;
+                    TrackEndPoint = DateTime.Now.TimeOfDay + LessonEnd[LessonEnd.IndexOf(GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)))].Item2;
+                    break;
+                case ("lesEnd2"):
+                    TrackEndPoint = GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay + TimeSpan.FromMilliseconds(500)).Item1 + TimeSpan.FromMilliseconds(500);
                     break;
                 default:
-                    if (GetClosestEvent(LessonEnd).Item1 > GetClosestEvent(LessonStart).Item1)
-                        TrackEndPoint = GetClosestEvent(LessonEnd).Item1 + TimeSpan.FromMilliseconds(500);
+                    if (noEvents)
+                        TrackEndPoint = DateTime.Now.TimeOfDay + TimeSpan.FromSeconds(5);
                     else
                     {
                         List<(TimeSpan, TimeSpan)> ClosestEventsList = new List<(TimeSpan, TimeSpan)>();
-                        ClosestEventsList.Append(GetClosestEvent(Announcement));
-                        ClosestEventsList.Append(GetClosestEvent(LessonStart));
-                        ClosestEventsList.Append(GetClosestEvent(LessonEnd));
+                        ClosestEventsList.Add(GetClosestEvent(Announcement, DateTime.Now.TimeOfDay));
+                        ClosestEventsList.Add(GetClosestEvent(LessonStart, DateTime.Now.TimeOfDay));
+                        ClosestEventsList.Add(GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay));
                         TrackEndPoint = GetMinSpan(ClosestEventsList).Item1 + TimeSpan.FromMilliseconds(500);
                     }
-                    break;
+                        break;
             }
         }
 
@@ -126,11 +162,11 @@ namespace ASPNET_mvc_core.Models
             switch (cause)
             {
                 case ("announcement"):
-                    return (Announcement.IndexOf(GetClosestEvent(Announcement)).ToString() + ".mp3", GetClosestEvent(Announcement).Item2);
+                    return ((Announcement.IndexOf(GetClosestEvent(Announcement, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)))+1).ToString() + ".mp3", GetClosestEvent(Announcement, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)).Item2);
                 case ("lesStart"):
-                    return (LessonStart.IndexOf(GetClosestEvent(LessonStart)).ToString() + ".mp3", GetClosestEvent(LessonStart).Item2);
+                    return ((LessonStart.IndexOf(GetClosestEvent(LessonStart, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)))+1).ToString() + ".mp3", GetClosestEvent(LessonStart, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)).Item2);
                 default:
-                    return (LessonEnd.IndexOf(GetClosestEvent(LessonEnd)).ToString() + ".mp3", GetClosestEvent(LessonEnd).Item2);
+                    return ((LessonEnd.IndexOf(GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)))+1).ToString() + ".mp3", GetClosestEvent(LessonEnd, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)).Item2);
             }
         }
 
@@ -140,50 +176,60 @@ namespace ASPNET_mvc_core.Models
             {
                 switch (NextEvent)
                 {
+                    case ("none"):
+                        SetTrackEndPoint("none");
+                        SetCurrent(("", TimeSpan.FromMinutes(1)));
+                        return ("", new TimeSpan());
                     case ("track"):
 
                         if (Playlist == null)
                         {
                             Playlist = new List<(string, TimeSpan)>();
                             SetTrackEndPoint("none");
+                            SetCurrent(("", TimeSpan.FromMinutes(1)));
                             return ("", new TimeSpan());
                         }
                         if (Playlist.Count == 0)
                         {
                             SetTrackEndPoint("none");
+                            SetCurrent(("", TimeSpan.FromMinutes(1)));
                             return ("", new TimeSpan());
                         }
                         try
                         {
-                            current = Playlist[0];
+                            SetCurrent(("/playlist/" + Playlist[0].Item1,Playlist[0].Item2));
                             Playlist.RemoveAt(0);
                             SetTrackEndPoint("track");
-                            return ("/playlist/" + current.Item1, current.Item2);
+                            return (GetCurrent().Item1, GetCurrent().Item2);
                         }
                         catch
                         {
                             SetTrackEndPoint("none");
+                            SetCurrent(("", TimeSpan.FromMinutes(1)));
                             return ("", new TimeSpan());
                         }
                     case ("announcement"):
                         SetTrackEndPoint("announcement");
                         var x = GetEventName("announcement");
-                        return ("/announcements/" + x.Item1, x.Item2);
+                        SetCurrent(("/announcement/" + x.Item1, x.Item2));
+                        return (GetCurrent());
                     case ("lesStart"):
                         SetTrackEndPoint("lesStart");
                         var y = GetEventName("lesStart");
-                        return ("/lesStart/" + y.Item1, y.Item2);
+                        //SetCurrent(("/lesStart/" + y.Item1, y.Item2));
+                        //return (GetCurrent());
+                        SetCurrent(("", TimeSpan.FromMinutes(1)));
+                        return (("/lesStart/" + y.Item1, y.Item2));
+                    case ("lesEnd2"):
+                        SetTrackEndPoint("lesEnd2");
+                        SetCurrent(("", TimeSpan.FromMinutes(1)));
+                        return ("", new TimeSpan());
                     default:
                         SetTrackEndPoint("lesEnd");
                         var z = GetEventName("lesEnd");
-                        return ("/lesEnd/" + z.Item1, z.Item2);
+                        SetCurrent(("/lesEnd/" + z.Item1, z.Item2));
+                        return (GetCurrent());
                 }
-            }
-            set
-            {
-                if (Playlist == null)
-                    Playlist = new List<(string, TimeSpan)>();
-                Playlist.Add(value);
             }
         }
     }

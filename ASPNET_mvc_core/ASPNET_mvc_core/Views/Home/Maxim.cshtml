@@ -31,7 +31,8 @@
     });
 </script>
 <script type="text/javascript">
-    function SendStartOver() {
+        $(document).ready(function () {
+    $('#START').click(function () {
         $.ajax({
             type: 'GET',
             url: '/home/startOver',
@@ -40,21 +41,21 @@
                 SendNextTrack();
             }
         });
-    }
-    function SendNextTrack() {
-        $.ajax({
-            type: 'GET',
-            url: '/home/nextTrack',
-            success: function (result) {
-                SetSource(result);
-                SendNextTrack();
+    });
+            function SendNextTrack() {
+                $.ajax({
+                    type: 'GET',
+                    url: '/home/nextTrack',
+                    success: function (result) {
+                        SetSource(result);
+                        SendNextTrack();
+                    }
+                });
             }
-        });
-    }
     function SetSource(src) {
         $('#player').attr('src', src);
     }
-    $(document).ready(function () { SendStartOver(); });
+    });
 </script>
 
 <button id="videoEnd">
@@ -63,6 +64,10 @@
 
 <button id="addDestiny">
     Press me to add a destiny
+</button>
+
+<button id="START">
+    START PLAYING
 </button>
 <input type="text" id="newDestinyField">
 
@@ -96,6 +101,6 @@
         </tr>
     </tbody>
 </table>
-<video autoplay id="player" src="" width="170" height="85">
+<video autoplay id="player" src="" >
     <p>If you are reading this, it is because your browser does not support the HTML5 video element.</p>
 </video>
