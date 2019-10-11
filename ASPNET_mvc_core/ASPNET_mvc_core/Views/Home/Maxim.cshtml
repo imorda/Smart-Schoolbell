@@ -31,31 +31,52 @@
     });
 </script>
 <script type="text/javascript">
-        $(document).ready(function () {
-    $('#START').click(function () {
+    // what a heck is going on with tabulation here?
+    $(document).ready(function ()
+    {
+        $('#START').click(function ()
+        {
+            $.ajax({
+                type: 'GET',
+                url: '/home/startOver',
+                success: function (result) {
+                    ConfigurePlayer(result);
+                    SendNextTrack();
+                }
+            });
+        });
+            
+    });
+    function ConfigurePlayer(result)
+    {
+        var parsedResult = JSON.parse(result);
+        SetSource(parsedResult.src);
+        SetVolume(parsedResult.volume);
+        SetCurrentTime(parsedResult.time);
+    }
+    function SetSource(src)
+    {
+        $('#player').attr('src', src);
+    }
+    function SetVolume(vol)
+    {
+        $('#player').attr('volume', vol);
+    }
+    function SetCurrentTime(time)
+    {
+        $('#player').attr('currentTime', time);
+    }
+    function SendNextTrack()
+    {
         $.ajax({
             type: 'GET',
-            url: '/home/startOver',
+            url: '/home/nextTrack',
             success: function (result) {
-                SetSource(result);
+                ConfigurePlayer(result);
                 SendNextTrack();
             }
         });
-    });
-            function SendNextTrack() {
-                $.ajax({
-                    type: 'GET',
-                    url: '/home/nextTrack',
-                    success: function (result) {
-                        SetSource(result);
-                        SendNextTrack();
-                    }
-                });
-            }
-    function SetSource(src) {
-        $('#player').attr('src', src);
     }
-    });
 </script>
 
 <button id="videoEnd">
