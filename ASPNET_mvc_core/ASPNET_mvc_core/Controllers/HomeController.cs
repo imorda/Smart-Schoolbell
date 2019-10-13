@@ -64,13 +64,25 @@ namespace ASPNET_mvc_core.Controllers
         public IActionResult NextTrack()
         {
             Thread.Sleep(PlayerModel.getDelayMS());
-            return new JsonResult(PlayerModel.NextSource.Item1);
+            var result = PlayerModel.NextSource;
+            return new JsonResult(new
+            {
+                src = result.Item1,
+                volume = result.Item3,
+                time = result.Item4.TotalSeconds
+            });
         }
 
         [Route("startOver")]
         public IActionResult StartOver()
         {
-            return new JsonResult(PlayerModel.GetCurrent().Item1);
+            var result = PlayerModel.GetCurrent();
+            return new JsonResult(new
+            {
+                src = result.Item1,
+                volume = result.Item3,
+                time = (int)result.Item4.TotalSeconds
+            });
         }
     }
 }

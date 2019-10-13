@@ -5,50 +5,56 @@ using System.Threading.Tasks;
 
 namespace ASPNET_mvc_core.Models
 {
-    public class PlayerModel
+    public static class PlayerModel
     {
         public static List<(TimeSpan, TimeSpan)> LessonStart = new List<(TimeSpan, TimeSpan)>();
         public static List<(TimeSpan, TimeSpan)> LessonEnd = new List<(TimeSpan, TimeSpan)>();
         public static List<(TimeSpan, TimeSpan)> Announcement = new List<(TimeSpan, TimeSpan)>();
         public static List<(string, TimeSpan)> Playlist = new List<(string, TimeSpan)>();
 
+        public static float EventVolume = 1;
+        public static float TrackVolume = 0.5f;
+
         private static bool nil = true;
         private static bool noEvents = false;
-        private static (string, TimeSpan) curr;
+        private static (string, TimeSpan,float) curr;
+        private static string CurrEvent = "none";
+        private static (string, TimeSpan, float, TimeSpan) CurrTrack; //url, duration, volume, time(start point)
 
         private static TimeSpan TrackEndPoint = new TimeSpan();
 
 
         static PlayerModel()
         {
-            /*
-            LessonEnd.Add((TimeSpan.FromSeconds(22 * 60 * 60 + 26* 60 + 0), TimeSpan.FromSeconds(4)));
-            LessonStart.Add((TimeSpan.FromSeconds(22 * 60 * 60 + 26 * 60 + 15), TimeSpan.FromSeconds(4)));
-            LessonEnd.Add((TimeSpan.FromSeconds(22*60*60+ 26 * 60+30), TimeSpan.FromSeconds(4)));
-            Announcement.Add((TimeSpan.FromSeconds(22 * 60*60 + 26 * 60 + 45), TimeSpan.FromSeconds(4)));
-            Announcement.Add((TimeSpan.FromSeconds(22 * 60*60 + 26 * 60 + 55), TimeSpan.FromSeconds(4)));
-            Playlist.Add(("15.mp4", TimeSpan.FromMinutes(1)));
-            Playlist.Add(("16.mp3", TimeSpan.FromMinutes(1)));
-            Playlist.Add(("17.mp4", TimeSpan.FromMinutes(1))); ТЕСТОВОЕ РАСПИСАНИЕ
-    */     
+            
+           /* LessonEnd.Add((TimeSpan.FromSeconds(17 * 60 * 60 + 53* 60 + 0), TimeSpan.FromSeconds(4)));
+            LessonStart.Add((TimeSpan.FromSeconds(17 * 60 * 60 + 53 * 60 + 15), TimeSpan.FromSeconds(4)));
+            LessonEnd.Add((TimeSpan.FromSeconds(17*60*60+ 53 * 60+30), TimeSpan.FromSeconds(4)));
+            Announcement.Add((TimeSpan.FromSeconds(17 * 60*60 + 53 * 60 + 45), TimeSpan.FromSeconds(4)));
+            Announcement.Add((TimeSpan.FromSeconds(17 * 60*60 + 53 * 60 + 55), TimeSpan.FromSeconds(4)));
+            Playlist.Add(("15.mp4", TimeSpan.FromSeconds(30)));
+            Playlist.Add(("16.mp3", TimeSpan.FromSeconds(30)));
+            Playlist.Add(("17.mp4", TimeSpan.FromSeconds(30))); //ТЕСТОВОЕ РАСПИСАНИЕ*/
     }
 
-        public static void SetCurrent((string, TimeSpan) value)
+        public static void SetCurrent((string, TimeSpan,float) value)
         {
             nil = false;
             curr = value;
         }
 
-        public static (string, TimeSpan) GetCurrent()
+        public static (string, TimeSpan,float,TimeSpan) GetCurrent()
         {
-        
-                if (!nil)
-                    return (curr);
+
+            if (!nil)
+                if (CurrEvent == "track")
+                    return (curr.Item1, curr.Item2, curr.Item3, CurrTrack.Item2 - (TrackEndPoint - DateTime.Now.TimeOfDay));
                 else
-                {
-                    (string, TimeSpan) x = NextSource;
-                    return (x.Item1, x.Item2);
-                }
+                    return (curr.Item1, curr.Item2, curr.Item3,new TimeSpan());
+            else
+            {
+                return (NextSource);
+            }
             
         }
 
@@ -130,6 +136,9 @@ namespace ASPNET_mvc_core.Models
                 case ("track"):
                     TrackEndPoint = DateTime.Now.TimeOfDay +  GetCurrent().Item2;
                     break;
+                case ("track2"):
+                    TrackEndPoint = DateTime.Now.TimeOfDay + (CurrTrack.Item2 - CurrTrack.Item4);
+                    break;
                 case ("announcement"):
                     TrackEndPoint = DateTime.Now.TimeOfDay + Announcement[Announcement.IndexOf(GetClosestEvent(Announcement, DateTime.Now.TimeOfDay - TimeSpan.FromSeconds(1)))].Item2;
                     break;
@@ -170,64 +179,86 @@ namespace ASPNET_mvc_core.Models
             }
         }
 
-        public static (string, TimeSpan) NextSource
+        public static (string, TimeSpan,float,TimeSpan) NextSource //url,duration,volume,time (start point)
         {
             get
             {
-                switch (NextEvent)
+                if (CurrEvent == "track")
+                    CurrTrack.Item4 = CurrTrack.Item2 - (TrackEndPoint - DateTime.Now.TimeOfDay);
+            switch (NextEvent)
                 {
                     case ("none"):
                         SetTrackEndPoint("none");
-                        SetCurrent(("", TimeSpan.FromMinutes(1)));
-                        return ("", new TimeSpan());
+                        SetCurrent(("", TimeSpan.FromMinutes(1),0));
+                        CurrEvent = "none";
+                        return ("", new TimeSpan(), 0, new TimeSpan());
                     case ("track"):
 
                         if (Playlist == null)
                         {
                             Playlist = new List<(string, TimeSpan)>();
                             SetTrackEndPoint("none");
-                            SetCurrent(("", TimeSpan.FromMinutes(1)));
-                            return ("", new TimeSpan());
+                            SetCurrent(("", TimeSpan.FromMinutes(1),0));
+                            CurrEvent = "none";
+                            return ("", new TimeSpan(),0, new TimeSpan());
                         }
                         if (Playlist.Count == 0)
                         {
                             SetTrackEndPoint("none");
-                            SetCurrent(("", TimeSpan.FromMinutes(1)));
-                            return ("", new TimeSpan());
+                            SetCurrent(("", TimeSpan.FromMinutes(1),0));
+                            CurrEvent = "none";
+                            return ("", new TimeSpan(),0, new TimeSpan());
                         }
                         try
                         {
-                            SetCurrent(("/playlist/" + Playlist[0].Item1,Playlist[0].Item2));
-                            Playlist.RemoveAt(0);
-                            SetTrackEndPoint("track");
-                            return (GetCurrent().Item1, GetCurrent().Item2);
+                            if ((CurrTrack.Item2 - CurrTrack.Item4).TotalSeconds < 15)
+                            {
+                                SetCurrent(("/playlist/" + Playlist[0].Item1, Playlist[0].Item2, TrackVolume));
+                                Playlist.RemoveAt(0);
+                                SetTrackEndPoint("track");
+                                CurrTrack = (GetCurrent().Item1, GetCurrent().Item2, GetCurrent().Item3, new TimeSpan());
+                                CurrEvent = "track";
+                                return (GetCurrent());
+                            }
+                            else
+                            {
+                                SetCurrent((CurrTrack.Item1, CurrTrack.Item2, CurrTrack.Item3));
+                                SetTrackEndPoint("track2");
+                                CurrEvent = "track";
+                                return (CurrTrack);
+                            }
                         }
                         catch
                         {
                             SetTrackEndPoint("none");
-                            SetCurrent(("", TimeSpan.FromMinutes(1)));
-                            return ("", new TimeSpan());
+                            SetCurrent(("", TimeSpan.FromMinutes(1),0));
+                            CurrEvent = "none";
+                            return ("", new TimeSpan(),0, new TimeSpan());
                         }
                     case ("announcement"):
                         SetTrackEndPoint("announcement");
                         var x = GetEventName("announcement");
-                        SetCurrent(("/announcement/" + x.Item1, x.Item2));
+                        SetCurrent(("/announcement/" + x.Item1, x.Item2,EventVolume));
+                        CurrEvent = "announcement";
                         return (GetCurrent());
                     case ("lesStart"):
                         SetTrackEndPoint("lesStart");
                         var y = GetEventName("lesStart");
                         //SetCurrent(("/lesStart/" + y.Item1, y.Item2));
                         //return (GetCurrent());
-                        SetCurrent(("", TimeSpan.FromMinutes(1)));
-                        return (("/lesStart/" + y.Item1, y.Item2));
+                        CurrEvent = "lesStart";
+                        SetCurrent(("", TimeSpan.FromMinutes(1),0));
+                        return (("/lesStart/" + y.Item1, y.Item2, EventVolume, new TimeSpan()));
                     case ("lesEnd2"):
                         SetTrackEndPoint("lesEnd2");
-                        SetCurrent(("", TimeSpan.FromMinutes(1)));
-                        return ("", new TimeSpan());
+                        SetCurrent(("", TimeSpan.FromMinutes(1),0));
+                        CurrEvent = "none";
+                        return ("", new TimeSpan(),0, new TimeSpan());
                     default:
                         SetTrackEndPoint("lesEnd");
                         var z = GetEventName("lesEnd");
-                        SetCurrent(("/lesEnd/" + z.Item1, z.Item2));
+                        SetCurrent(("/lesEnd/" + z.Item1, z.Item2, EventVolume));
+                        CurrEvent = "lesEnd";
                         return (GetCurrent());
                 }
             }

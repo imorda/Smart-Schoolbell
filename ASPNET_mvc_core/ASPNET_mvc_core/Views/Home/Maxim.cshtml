@@ -49,10 +49,9 @@
     });
     function ConfigurePlayer(result)
     {
-        var parsedResult = JSON.parse(result);
-        SetSource(parsedResult.src);
-        SetVolume(parsedResult.volume);
-        SetCurrentTime(parsedResult.time);
+        SetSource(result.src);
+        SetVolume(result.volume);
+        SetCurrentTime(result.time);
     }
     function SetSource(src)
     {
