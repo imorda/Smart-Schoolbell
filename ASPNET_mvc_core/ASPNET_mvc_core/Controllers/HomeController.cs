@@ -39,8 +39,9 @@ namespace ASPNET_mvc_core.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
+        [HttpPost]
         [Route("maxim")]
-        public IActionResult Maxim()
+        public IActionResult Maxim([FromBody] string content)
         {
             ViewData["Message"] = $"Сим-сим-сим, идёт по улице Максим. На кого пальцем покажет - тому... ";
             return View();

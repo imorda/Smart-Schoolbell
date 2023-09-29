@@ -27,14 +27,14 @@ namespace ASPNET_mvc_core.Models
         static PlayerModel()
         {
             
-           /* LessonEnd.Add((TimeSpan.FromSeconds(17 * 60 * 60 + 53* 60 + 0), TimeSpan.FromSeconds(4)));
-            LessonStart.Add((TimeSpan.FromSeconds(17 * 60 * 60 + 53 * 60 + 15), TimeSpan.FromSeconds(4)));
-            LessonEnd.Add((TimeSpan.FromSeconds(17*60*60+ 53 * 60+30), TimeSpan.FromSeconds(4)));
-            Announcement.Add((TimeSpan.FromSeconds(17 * 60*60 + 53 * 60 + 45), TimeSpan.FromSeconds(4)));
-            Announcement.Add((TimeSpan.FromSeconds(17 * 60*60 + 53 * 60 + 55), TimeSpan.FromSeconds(4)));
-            Playlist.Add(("15.mp4", TimeSpan.FromSeconds(30)));
+            LessonEnd.Add((TimeSpan.FromSeconds(21 * 60 * 60 + 0* 60 + 0), TimeSpan.FromSeconds(6)));
+            LessonStart.Add((TimeSpan.FromSeconds(21 * 60 * 60 + 0 * 60 + 15), TimeSpan.FromSeconds(6)));
+            LessonEnd.Add((TimeSpan.FromSeconds(21 * 60*60+ 0 * 60+30), TimeSpan.FromSeconds(6)));
+            Announcement.Add((TimeSpan.FromSeconds(21 * 60*60 + 0 * 60 + 45), TimeSpan.FromSeconds(6)));
+            Announcement.Add((TimeSpan.FromSeconds(21 * 60*60 + 0 * 60 + 55), TimeSpan.FromSeconds(6)));
+            Playlist.Add(("15.mp3", TimeSpan.FromSeconds(30)));
             Playlist.Add(("16.mp3", TimeSpan.FromSeconds(30)));
-            Playlist.Add(("17.mp4", TimeSpan.FromSeconds(30))); //ТЕСТОВОЕ РАСПИСАНИЕ*/
+            Playlist.Add(("17.mp3", TimeSpan.FromSeconds(30))); //ТЕСТОВОЕ РАСПИСАНИЕ*/
     }
 
         public static void SetCurrent((string, TimeSpan,float) value)
